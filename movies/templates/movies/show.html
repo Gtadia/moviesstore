@@ -29,6 +29,7 @@
         <h2>Reviews</h2>
         <hr />
         <ul class="list-group">
+          {% if template_data.reviews %}
           {% for review in template_data.reviews %}
           <li class="list-group-item pb-3 pt-3">
             <h5 class="card-title">
@@ -38,18 +39,51 @@
               {{ review.date }}
             </h6>
             <p class="card-text">{{ review.comment }}</p>
-            {% if user.is_authenticated and user == review.user %}
-            <a class="btn btn-primary"
-              href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">
-              Edit
-            </a>
-            <a class="btn btn-danger"
-              href="{% url 'movies.delete_review' id=template_data.movie.id review_id=review.id %}">
-              Delete
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+              {% if user.is_authenticated and user == review.user %}
+              <a class="btn btn-primary btn-sm"
+                href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">
+                Edit
+              </a>
+              <a class="btn btn-danger btn-sm"
+                href="{% url 'movies.delete_review' id=template_data.movie.id review_id=review.id %}">
+                Delete
+              </a>
+              {% endif %}
+              {% if user.is_authenticated %}
+              <button type="button" class="btn btn-outline-secondary btn-sm"
+                data-reply-toggle="reply-form-{{ review.id }}">
+                Reply
+              </button>
+              {% endif %}
+            </div>
+
+            {% if user.is_authenticated %}
+            <form method="POST" class="reply-form d-none mt-3"
+              id="reply-form-{{ review.id }}"
+              action="{% url 'movies.reply_review' id=template_data.movie.id review_id=review.id %}">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label class="form-label" for="reply-comment-{{ review.id }}">Reply</label>
+                <textarea class="form-control" name="comment" id="reply-comment-{{ review.id }}" rows="2"
+                  required></textarea>
+              </div>
+              <button type="submit" class="btn btn-dark btn-sm">Post Reply</button>
+            </form>
+            {% endif %}
+
+            {% if review.replies.all %}
+            <div class="mt-4 ps-3 border-start">
+              {% include 'movies/components/review_replies.html' with review=review movie=template_data.movie %}
+            </div>
             {% endif %}
           </li>
           {% endfor %}
+          {% else %}
+          <li class="list-group-item">
+            No reviews yet. Be the first to share your thoughts!
+          </li>
+          {% endif %}
         </ul>
 
         {% if user.is_authenticated %}
@@ -85,4 +119,24 @@
     </div>
   </div>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-reply-toggle]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var targetId = button.dataset.replyToggle;
+        var form = document.getElementById(targetId);
+        if (!form) {
+          return;
+        }
+        form.classList.toggle('d-none');
+        if (!form.classList.contains('d-none')) {
+          var textarea = form.querySelector('textarea');
+          if (textarea) {
+            textarea.focus();
+          }
+        }
+      });
+    });
+  });
+</script>
 {% endblock content %}

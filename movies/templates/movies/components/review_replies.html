@@ -1,0 +1,46 @@
+{% for reply in review.replies.all %}
+<div class="mb-3">
+  <div class="p-3 bg-light rounded">
+    <h6 class="mb-1">Reply by {{ reply.user.username }}</h6>
+    <small class="text-muted d-block mb-2">{{ reply.date }}</small>
+    <p class="mb-2">{{ reply.comment }}</p>
+    <div class="d-flex flex-wrap gap-2">
+      {% if user.is_authenticated and user == reply.user %}
+      <a class="btn btn-primary btn-sm"
+        href="{% url 'movies.edit_review' id=movie.id review_id=reply.id %}">
+        Edit
+      </a>
+      <a class="btn btn-danger btn-sm"
+        href="{% url 'movies.delete_review' id=movie.id review_id=reply.id %}">
+        Delete
+      </a>
+      {% endif %}
+      {% if user.is_authenticated %}
+      <button type="button" class="btn btn-outline-secondary btn-sm"
+        data-reply-toggle="reply-form-{{ reply.id }}">
+        Reply
+      </button>
+      {% endif %}
+    </div>
+
+    {% if user.is_authenticated %}
+    <form method="POST" class="reply-form d-none mt-3"
+      id="reply-form-{{ reply.id }}"
+      action="{% url 'movies.reply_review' id=movie.id review_id=reply.id %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label" for="reply-comment-{{ reply.id }}">Reply</label>
+        <textarea class="form-control" name="comment" id="reply-comment-{{ reply.id }}" rows="2" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-dark btn-sm">Post Reply</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if reply.replies.all %}
+  <div class="mt-3 ps-3 border-start">
+    {% include 'movies/components/review_replies.html' with review=reply movie=movie %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
